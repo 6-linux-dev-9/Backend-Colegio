@@ -1,4 +1,4 @@
-from marshmallow import fields,validate,Schema
+from marshmallow import fields,Schema
 
 class CursoRequestBody(Schema):
     nombre = fields.Str(required=True)

@@ -2,7 +2,7 @@ from marshmallow import ValidationError, fields
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, SQLAlchemySchema, auto_field
 from app.models import Alumno, BitacoraUsuario, Curso, Docente, Gestion, Materia, Usuario, Rol, Permiso
 from app.database import db
-from app.utils.enums.enums import  Sesion
+from app.utils.enums.enums import  EstadoGeneral, EstadoUsuario, Sesion
 
 class BaseFechaHoraSeparadoSchema(SQLAlchemyAutoSchema):
     fecha = fields.Method("get_fecha")
@@ -24,6 +24,24 @@ class BaseFechaCompletaSchema(SQLAlchemyAutoSchema):
     def format_updated(self, obj):
         return obj.updated_at.strftime("%d-%m-%Y %H:%M") if obj.updated_at else None
 
+class BaseEstadoGeneralSchema(SQLAlchemyAutoSchema):
+    estado = fields.Method("get_estado")
+    def get_estado(self,obj):
+        try:
+            return EstadoGeneral.get_by_char(obj.estado).get_descripcion()
+        except (ValueError,AttributeError):
+            raise ValidationError("Error en la conversion de datos")
+
+
+class BaseEstadoUsuarioSchema(SQLAlchemyAutoSchema):
+    estado = fields.Method("get_estado")
+    def get_estado(self,obj):
+        try:
+            estado_char = obj.estado if hasattr(obj, 'estado') else obj.usuario.estado
+            return EstadoUsuario.get_by_char(estado_char).get_descripcion()
+        except (ValueError,AttributeError):
+            raise ValidationError("Error en la conversion de datos")
+        
 #puros esquemas para las respuestas en formato json
 #para poder tener respuestas del json y que no entre a bucle supuestamente
 class UsuarioSchema(SQLAlchemyAutoSchema):
@@ -149,20 +167,22 @@ class UsuarioImageSchema(SQLAlchemyAutoSchema):
     def format_updated(self, obj):
         return obj.updated_at.strftime("%d-%m-%Y %H:%M")
 
-class AlumnoSchema(SQLAlchemySchema):
+class AlumnoSchema(BaseFechaCompletaSchema,BaseEstadoUsuarioSchema,SQLAlchemySchema):
     class Meta:
         model = Alumno
         load_instance = True
+        exclude = ["created_at","updated_at"]
     #atributos propio del esquema Alumno
     id = auto_field()
     rude = auto_field()
+
     nombre = fields.Function(lambda obj: obj.usuario.nombre)
     correo = fields.Function(lambda obj: obj.usuario.email)
     ci = fields.Function(lambda obj: obj.usuario.ci)
     url_profile = fields.Function(lambda obj: obj.usuario.url_profile)
 
 
-class DocenteSchema(BaseFechaCompletaSchema,SQLAlchemySchema):
+class DocenteSchema(BaseFechaCompletaSchema,BaseEstadoUsuarioSchema,SQLAlchemySchema):
     class Meta:
         model = Docente
         load_instance = True
@@ -171,25 +191,26 @@ class DocenteSchema(BaseFechaCompletaSchema,SQLAlchemySchema):
     id = auto_field()
     nombre = fields.Function(lambda obj: obj.usuario.nombre)
     correo = fields.Function(lambda obj: obj.usuario.email)
-    estado = fields.Function(lambda obj : obj.usuario.estado)
+
     ci = fields.Function(lambda obj: obj.usuario.ci)
     url_profile = fields.Function(lambda obj: obj.usuario.url_profile)
 
-class GestionSchema(BaseFechaCompletaSchema,SQLAlchemyAutoSchema):
+class GestionSchema(BaseFechaCompletaSchema,BaseEstadoGeneralSchema,SQLAlchemyAutoSchema):
     class Meta:
         model = Gestion
         load_instance = True
         sqla_session = db.session
         exclude = ["created_at","updated_at"]
 
-class MateriaSchema(BaseFechaCompletaSchema,SQLAlchemyAutoSchema):
+class MateriaSchema(BaseFechaCompletaSchema,BaseEstadoGeneralSchema,SQLAlchemyAutoSchema):
     class Meta:
         model = Materia
         load_instance = True
         sqla_session = db.session
         exclude = ["created_at","updated_at"]
 
-class CursoSchema(BaseFechaCompletaSchema,SQLAlchemyAutoSchema):
+class CursoSchema(BaseFechaCompletaSchema,BaseEstadoGeneralSchema,
+                  SQLAlchemyAutoSchema):
     class Meta:
         model = Curso
         load_instance = True

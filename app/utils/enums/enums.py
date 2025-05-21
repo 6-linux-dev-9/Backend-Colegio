@@ -1,6 +1,7 @@
 from enum import Enum
 
-from app.errors.errors import GenericError
+
+from app.errors.errors import BadRequestException, GenericError
 from http import HTTPStatus
 
 
@@ -21,7 +22,27 @@ class BaseEnum(Enum):
 
     def get_caracter(self):
         return self.value[0]
+    #para comparar de descripcion a clave 
+    #digamos pasamos activo -> AC
+    @classmethod
+    def get_by_description(cls,description):
+        for action in cls:
+            if action.value[1].lower() == description.lower():
+                print(f"action {action}")
+                return action.get_caracter()
+        raise BadRequestException(f"error..descripcion no valida...{description}")
 
+class EstadoGeneral(BaseEnum):
+    HABILITADO = ('AC','Habilitado') #luego sera H
+    DESHABILITADO = ('D','Deshabilitado')# luego sera D
+
+
+class EstadoUsuario(BaseEnum):
+    ACTIVO = ('AC','Activo')
+    SUSPENDIDO = ('S','Suspendido')
+    ABANDONO = ('AB','Abandono')
+    ELIMINADO = ('E','Eliminado')
+    BLOQUEADO = ('B','Bloqueado')
 
 class Sesion(BaseEnum):
 

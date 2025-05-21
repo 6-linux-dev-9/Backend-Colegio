@@ -28,6 +28,11 @@ class InternalServerException(GenericError):
     def __init__(self, message):
         super().__init__(HTTPStatus.INTERNAL_SERVER_ERROR, HTTPStatus.INTERNAL_SERVER_ERROR.value, message)
 
+class NotFoundException(GenericError):
+    def __init__(self, message):
+        super().__init__(HTTPStatus.NOT_FOUND, HTTPStatus.NOT_FOUND.value, message)
+
+
 class ForbiddenException(GenericError):
     def __init__(self, message):
         super().__init__(HTTPStatus.FORBIDDEN, HTTPStatus.FORBIDDEN.value, message)

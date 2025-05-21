@@ -1,12 +1,13 @@
 from flask import Blueprint, jsonify, request
 from marshmallow import ValidationError
 from app.database import db
-from app.errors.errors import  GenericError, InternalServerException
+from app.errors.errors import  GenericError, InternalServerException, NotFoundException
 from app.models import Curso
-from app.schemas.curso_schema import CursoRequestBody
+from app.schemas.curso_schema import CursoRequestBody, CursoUpdateBody
 
 from app.schemas.pagination_shema import PaginatedResponseT
 from app.schemas.schemas import CursoSchema
+from app.utils.enums.enums import EstadoGeneral
 
 
 
@@ -53,3 +54,87 @@ def listar_paginados():
         return PaginatedResponseT.paginate(Curso.query,CursoSchema)
     except Exception as e:
         raise InternalServerException(f"Error ocurrio un error inesperado {str(e)}")
+
+
+@curso_bp.route('/<int:id>/get', methods=["GET"])
+def get_curso(id):
+    try:
+        curso = Curso.query.get(id)
+        if not curso:
+            raise NotFoundException("Error..curso no encontrado..")
+
+        return jsonify({
+            "curso": CursoSchema().dump(curso)
+        })
+
+    except GenericError:
+        db.session.rollback()
+        raise
+    except Exception as e:
+        db.session.rollback()
+        raise InternalServerException(f"Error inesperado al obtener el curso: {str(e)}")
+
+
+#actualizar a inhabilitado,solo si el curso se dejara de dar en cualquier lapso del tiempo
+#no afecta a las otras tablas
+
+#podria ser funcionalidad futura si quisieramos actualizar la desabilitacion de ese curso para esa gestion cosa que no lo haga manualmente
+
+@curso_bp.route('/<int:id>/update', methods=["PUT"])
+def update_curso(id):
+    try:
+        curso = Curso.query.get(id)
+        if not curso:
+            raise NotFoundException("Error..curso no encontrado..")
+
+        body = request.get_json()
+
+        schema = CursoUpdateBody()
+        if schema.validate(body):
+            raise ValidationError("Hubo un error en la validación de datos.")
+
+        data = schema.load(body)
+        curso.nombre = data["nombre"]
+        curso.turno = data["turno"]
+        print(data["nombre"])
+        print(data["turno"])
+        print(data["estado"])
+        curso.estado = EstadoGeneral.get_by_description(data["estado"])
+
+        db.session.commit()
+        return jsonify({
+            "message": "Curso actualizado exitosamente",
+            "curso": CursoSchema().dump(curso)
+        })
+
+    except GenericError:
+        db.session.rollback()
+        raise
+    except Exception as e:
+        db.session.rollback()
+        raise InternalServerException(f"Error inesperado al actualizar el curso: {str(e)}")
+
+
+#solo para administrador
+@curso_bp.route('/<int:id>/delete', methods=["DELETE"])
+def delete_curso(id):
+    try:
+        curso = Curso.query.get(id)
+        if not curso:
+            raise NotFoundException("Curso no encontrado")
+                
+        #para desabilitar
+        curso.estado = EstadoGeneral.DESHABILITADO._value_[0]
+
+        # curso.soft_delete()
+        db.session.commit()
+        return jsonify({
+            "message": "Curso eliminado con éxito"
+        })
+
+    except GenericError:
+        db.session.rollback()
+        raise
+    except Exception as e:
+        db.session.rollback()
+        raise InternalServerException(f"Error inesperado al eliminar el curso: {str(e)}")

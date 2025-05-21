@@ -23,12 +23,13 @@ def registrar_docente():
         schema = DocenteRegisterSchema()
         if schema.validate(body): 
             raise ValidationError("Hubo un error en la validacion de datos")
+        
         data = schema.load(body)
         usuario = Usuario.query.filter_by(ci=data["ci"]).first()
 
         if usuario:
             raise GenericError(HTTPStatus.BAD_REQUEST,HTTPStatus.BAD_REQUEST.value,"Error..el usuario ya esta registrado en el sistema")
-        rol = Rol.query.filter_by(nombre = RolesEnum.ADMINISTRADOR).first()
+        rol = Rol.query.filter_by(nombre = RolesEnum.DOCENTE).first()
 
         if not rol:
             raise GenericError(HTTPStatus.NOT_FOUND,HTTPStatus.NOT_FOUND.phrase,"Error Rol no encontrado..")

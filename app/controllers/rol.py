@@ -6,7 +6,7 @@ from app.errors.errors import GenericError
 from app.models import Permiso, Rol #hacemos referencia al modelo usuario por a ese modelo consultaremos
 from app.database import db  #usaremos la instancia a la base de datos
 from app.schemas.pagination_shema import PaginatedResponseT
-from app.schemas.permission_schema_body import PermissionRequest
+
 from app.schemas.rol_schema_body import RolRegisterRequest
 from app.schemas.schemas import RolSchema, RolWithPermissionSchema   #usamos un esquema de validacion de tipos
 from sqlalchemy.orm import joinedload
