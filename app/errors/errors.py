@@ -16,6 +16,22 @@ class GenericError(Exception):
     def __str__(self):
         return f"{self.error}: {self.message}"
 
+class UnauthorizedException(GenericError):
+    def __init__(self, message):
+        super().__init__(HTTPStatus.UNAUTHORIZED, HTTPStatus.UNAUTHORIZED.value, message)
+
+class BadRequestException(GenericError):
+    def __init__(self, message):
+        super().__init__(HTTPStatus.BAD_REQUEST, HTTPStatus.BAD_REQUEST.value, message)
+
+class InternalServerException(GenericError):
+    def __init__(self, message):
+        super().__init__(HTTPStatus.INTERNAL_SERVER_ERROR, HTTPStatus.INTERNAL_SERVER_ERROR.value, message)
+
+class ForbiddenException(GenericError):
+    def __init__(self, message):
+        super().__init__(HTTPStatus.FORBIDDEN, HTTPStatus.FORBIDDEN.value, message)
+
 def registrar_error_handler(app):
     #se dispara cuando se lanza la excepcion generica ,tirando un json de error,claro que debemos pasarle algunos datos
     @app.errorhandler(GenericError)

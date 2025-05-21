@@ -155,6 +155,7 @@ def get_all_paginate():
         return PaginatedResponseT.paginate(Rol.get_active(),RolSchema)
     except Exception as e:
         raise GenericError(HTTPStatus.INTERNAL_SERVER_ERROR,HTTPStatus.INTERNAL_SERVER_ERROR.phrase,f"Error..hubo un error inesperado..{str(e)}") 
+    
 @rol_bp.route('/test',methods=["GET"])
 def test():
     return jsonify({"message":"Testeando"})

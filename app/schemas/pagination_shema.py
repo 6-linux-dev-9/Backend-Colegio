@@ -40,7 +40,7 @@ class PaginatedResponse:
 class PaginatedResponseT:
     PAGINA_POR_DEFECTO = 1
     CANTIDAD_ITEMS_DEFECTO = 5
-    MAX_ITEM_PAGE = 20
+    MAX_ITEM_PAGE = 100
 
     @classmethod
     def paginate(cls, query, schema: Schema):

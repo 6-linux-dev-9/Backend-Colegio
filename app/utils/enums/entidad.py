@@ -1,0 +1,7 @@
+class RolesEnum:
+    DOCENTE = "DOCENTE",
+    ADMINISTRADOR ="ADMINISTRADOR",
+    ALUMNO = "ALUMNO",
+    USUARIO = "USUARIO",
+    SECRETARIA = "SECRETARIA"
+    

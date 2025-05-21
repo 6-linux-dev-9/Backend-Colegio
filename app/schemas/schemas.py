@@ -1,9 +1,28 @@
 from marshmallow import ValidationError, fields
-from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
-from app.models import BitacoraUsuario, Usuario, Rol, Permiso
+from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, SQLAlchemySchema, auto_field
+from app.models import Alumno, BitacoraUsuario, Curso, Docente, Gestion, Materia, Usuario, Rol, Permiso
 from app.database import db
 from app.utils.enums.enums import  Sesion
 
+class BaseFechaHoraSeparadoSchema(SQLAlchemyAutoSchema):
+    fecha = fields.Method("get_fecha")
+    hora = fields.Method("get_hora")
+
+    def get_fecha(self,obj):
+        return obj.created_at.strftime("%d-%-m-%Y") if obj.created_at else None
+    
+    def get_hora(self,obj):
+        return obj.created_at.strftime("%H:%M") if obj.created_at else None
+
+class BaseFechaCompletaSchema(SQLAlchemyAutoSchema):
+    fecha_creacion = fields.Method("format_created")
+    fecha_actualizacion = fields.Method("format_updated")
+
+    def format_created(self, obj):
+        return obj.created_at.strftime("%d-%m-%Y %H:%M") if obj.created_at else None
+
+    def format_updated(self, obj):
+        return obj.updated_at.strftime("%d-%m-%Y %H:%M") if obj.updated_at else None
 
 #puros esquemas para las respuestas en formato json
 #para poder tener respuestas del json y que no entre a bucle supuestamente
@@ -27,9 +46,9 @@ class UsuarioSchema(SQLAlchemyAutoSchema):
     def format_updated(self, obj):
         return obj.updated_at.strftime("%d-%m-%Y %H:%M")
 
-class RolSchema(SQLAlchemyAutoSchema):
-    fecha_creacion = fields.Method("format_created")
-    fecha_actualizacion = fields.Method("format_updated")
+#usar primero el baseSchema para que use el metodo de formateo de esa clase
+class RolSchema(BaseFechaCompletaSchema,SQLAlchemyAutoSchema):
+    
     class Meta:
         model = Rol
         load_instance = True
@@ -38,11 +57,6 @@ class RolSchema(SQLAlchemyAutoSchema):
 
     #permisos = fields.List(fields.Nested("PermisoSchema", only=["id", "nombre"]))
 
-    def format_created(self, obj):
-        return obj.created_at.strftime("%d-%m-%Y %H:%M")
-
-    def format_updated(self, obj):
-        return obj.updated_at.strftime("%d-%m-%Y %H:%M")
     
 
 class PermisoSchema(SQLAlchemyAutoSchema):
@@ -135,7 +149,49 @@ class UsuarioImageSchema(SQLAlchemyAutoSchema):
     def format_updated(self, obj):
         return obj.updated_at.strftime("%d-%m-%Y %H:%M")
 
+class AlumnoSchema(SQLAlchemySchema):
+    class Meta:
+        model = Alumno
+        load_instance = True
+    #atributos propio del esquema Alumno
+    id = auto_field()
+    rude = auto_field()
+    nombre = fields.Function(lambda obj: obj.usuario.nombre)
+    correo = fields.Function(lambda obj: obj.usuario.email)
+    ci = fields.Function(lambda obj: obj.usuario.ci)
+    url_profile = fields.Function(lambda obj: obj.usuario.url_profile)
 
 
+class DocenteSchema(BaseFechaCompletaSchema,SQLAlchemySchema):
+    class Meta:
+        model = Docente
+        load_instance = True
+        exclude = ["created_at","updated_at"]
+    #atributos propio del esquema Alumno
+    id = auto_field()
+    nombre = fields.Function(lambda obj: obj.usuario.nombre)
+    correo = fields.Function(lambda obj: obj.usuario.email)
+    estado = fields.Function(lambda obj : obj.usuario.estado)
+    ci = fields.Function(lambda obj: obj.usuario.ci)
+    url_profile = fields.Function(lambda obj: obj.usuario.url_profile)
 
+class GestionSchema(BaseFechaCompletaSchema,SQLAlchemyAutoSchema):
+    class Meta:
+        model = Gestion
+        load_instance = True
+        sqla_session = db.session
+        exclude = ["created_at","updated_at"]
 
+class MateriaSchema(BaseFechaCompletaSchema,SQLAlchemyAutoSchema):
+    class Meta:
+        model = Materia
+        load_instance = True
+        sqla_session = db.session
+        exclude = ["created_at","updated_at"]
+
+class CursoSchema(BaseFechaCompletaSchema,SQLAlchemyAutoSchema):
+    class Meta:
+        model = Curso
+        load_instance = True
+        sqla_session = db.session
+        exclude = ["created_at","updated_at"]

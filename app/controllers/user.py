@@ -111,10 +111,11 @@ def editAtributtes():
 
         usuario.username = data["username"]
         usuario.nombre = data["nombre"]
+
+        validar_ci_y_email(usuario,data["email"],data["ci"])
+
         usuario.email = data["email"]
-        if usuario.rol.nombre == "ADMINISTRADOR":
-            if(data.get("rol_id")):
-                usuario.rol_id = (data.get("rol_id"))
+        usuario.ci = data["ci"]
 
         bitacora_usuario = BitacoraUsuario(
             ip = obtener_ip(),
@@ -134,9 +135,23 @@ def editAtributtes():
         db.session.rollback()
         raise GenericError(HTTPStatus.INTERNAL_SERVER_ERROR,HTTPStatus.INTERNAL_SERVER_ERROR.phrase,f"Error..algo salio mal..{str(e)}")
 
+def validar_ci_y_email(usuario,email,ci):
+    if usuario.email != email :
+        email_user = Usuario.query.filter_by(email=email).first() 
+        if email_user : 
+            raise GenericError(HTTPStatus.BAD_REQUEST,HTTPStatus.BAD_REQUEST.phrase,"Error.. ya existe un usuario con esta direccion de correo..")
+    if usuario.ci != ci :
+        ci_user = Usuario.query.filter_by(ci=ci).first() 
+        if ci_user : 
+            raise GenericError(HTTPStatus.BAD_REQUEST,HTTPStatus.BAD_REQUEST.phrase,"Error.. ya existe un usuario con este CI..")
+    
+
+
+
 @usuario_bp.route("/list-paginate",methods=["GET","OPTIONS"])
 def get_list_usuario():
-    query = Usuario.query.order_by(Usuario.rol_id)
+    rol = Rol.query.filter_by(nombre = "ADMINISTRADOR").first()
+    query = Usuario.query.order_by(Usuario.rol_id) if not rol else Usuario.query.filter(Usuario.rol_id != rol.id).order_by(Usuario.rol_id) 
     return PaginatedResponseT.paginate(query,UsuarioSchema)
 
 

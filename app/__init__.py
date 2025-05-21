@@ -18,6 +18,11 @@ from app.errors.errors import registrar_jwt_handlers
 from app.routers.index import api_bp 
 from flask_cors import CORS
 
+from app.seeders.main_seeder import seed_all_seeder_command
+from commands import seed_alumnos_command, seed_curso_gestion_command, seed_curso_gestion_materia_command, seed_cursos_command, seed_docentes_command, seed_gestiones_command, seed_materias_command
+
+
+
 
 #
 # Cargar variables de entorno del .env al sistema parece
@@ -69,7 +74,14 @@ def create_app():
     #registrar seeders
 
   
-
+    app.cli.add_command(seed_alumnos_command)
+    app.cli.add_command(seed_docentes_command)
+    app.cli.add_command(seed_cursos_command)
+    app.cli.add_command(seed_gestiones_command)
+    app.cli.add_command(seed_materias_command)
+    app.cli.add_command(seed_all_seeder_command)
+    app.cli.add_command(seed_curso_gestion_command)
+    app.cli.add_command(seed_curso_gestion_materia_command)
     # upgrade()
     # seed_all_seeders_command()
     return app

@@ -4,11 +4,13 @@ from marshmallow import fields,validate,Schema
 #es como definir un DTO de request
 class AuthRegisterSchemaBody(Schema):
     nombre = fields.Str(required=True)
-    email = fields.Email(required=True)
+    email = fields.Email(required=False)
     password = fields.Str(required=True,validate=validate.Length(min=4))
+    ci = fields.Str(required=True)
+
 
 class AuthLoginSchemaBody(Schema):
-    email = fields.Email(required=True)
+    email = fields.Str(required=True)
     password = fields.Str(required=True)
 
 class AuthAdminRegisterSchema(Schema):
