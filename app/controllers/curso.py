@@ -6,7 +6,7 @@ from app.models import Curso
 from app.schemas.curso_schema import CursoRequestBody, CursoUpdateBody
 
 from app.schemas.pagination_shema import PaginatedResponseT
-from app.schemas.schemas import CursoSchema
+from app.schemas.schemas import CursoSchema, CursoSimpleSchema
 from app.utils.enums.enums import EstadoGeneral
 
 
@@ -54,6 +54,13 @@ def listar_paginados():
         return PaginatedResponseT.paginate(Curso.query,CursoSchema)
     except Exception as e:
         raise InternalServerException(f"Error ocurrio un error inesperado {str(e)}")
+
+@curso_bp.route('/list',methods=["GET"])  
+def list_gestion():
+    try:
+        return CursoSimpleSchema(many=True).dump(Curso.query.filter_by(estado=EstadoGeneral.HABILITADO.get_caracter()).all())
+    except Exception as e:
+        raise InternalServerException(f"ocurrio un error inesperado ${str(e)}")
 
 
 @curso_bp.route('/<int:id>/get', methods=["GET"])

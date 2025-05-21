@@ -1,6 +1,6 @@
-from marshmallow import ValidationError, fields
+from marshmallow import Schema, ValidationError, fields
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, SQLAlchemySchema, auto_field
-from app.models import Alumno, BitacoraUsuario, Curso, Docente, Gestion, Materia, Usuario, Rol, Permiso
+from app.models import Alumno, BitacoraUsuario, Curso, CursoGestion, Docente, Gestion, Materia, Usuario, Rol, Permiso
 from app.database import db
 from app.utils.enums.enums import  EstadoGeneral, EstadoUsuario, Sesion
 
@@ -216,3 +216,34 @@ class CursoSchema(BaseFechaCompletaSchema,BaseEstadoGeneralSchema,
         load_instance = True
         sqla_session = db.session
         exclude = ["created_at","updated_at"]
+
+
+class CursoSimpleSchema(Schema):
+    id = fields.Int()
+    nombre = fields.Method("get_nombre_completo")
+
+    def get_nombre_completo(self, obj):
+        return f"{obj.nombre} - {obj.turno}"
+
+class CursoGestionSchema(BaseEstadoGeneralSchema,SQLAlchemyAutoSchema):
+    total_aprobados = fields.Method("get_total_aprobados")
+    total_reprobados = fields.Method("get_total_reprobados")
+    total_abandono = fields.Method("get_total_abandono")
+
+    class Meta:
+        model = CursoGestion
+        load_instance = True
+        sqla_session = db.session
+        exclude = ["created_at","updated_at"]
+
+    curso = fields.Nested("CursoSimpleSchema",only=["id","nombre"])
+    def get_total_aprobados(self, obj):
+        return 0 if obj.total_aprobados is None else obj.total_aprobados
+
+    def get_total_reprobados(self, obj):
+        return 0 if obj.total_aprobados is None else obj.total_reprobados
+    
+    def get_total_abandono(self, obj):
+        return 0 if obj.total_abandono is None else obj.total_abandono
+        
+    

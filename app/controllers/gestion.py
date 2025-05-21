@@ -4,12 +4,12 @@ from flask import Blueprint, jsonify, request
 from marshmallow import ValidationError
 from app.database import db
 from app.errors.errors import GenericError, InternalServerException, NotFoundException
-from app.models import Gestion
-from app.schemas.gestion_chema import GestionRequestBody, GestionUpdateBody
+from app.models import Curso, CursoGestion, Gestion
+from app.schemas.gestion_chema import GestionGetCursosBody, GestionRequestBody, GestionUpdateBody
 from app.schemas.pagination_shema import PaginatedResponseT
-from app.schemas.schemas import GestionSchema
+from app.schemas.schemas import CursoGestionSchema, GestionSchema
 from app.utils.enums.enums import EstadoGeneral
-
+from sqlalchemy.orm import joinedload
 
 gestion_bp = Blueprint('gestion',__name__)
 
@@ -41,6 +41,12 @@ def get_gestiones_paginado():
     except Exception as e:
         raise InternalServerException(f"ocurrio un error inesperado ${str(e)}")
     
+@gestion_bp.route('/list',methods=["GET"])  
+def list_gestion():
+    try:
+        return GestionSchema(many=True).dump(Gestion.query.filter_by(estado=EstadoGeneral.HABILITADO.get_caracter()).all())
+    except Exception as e:
+        raise InternalServerException(f"ocurrio un error inesperado ${str(e)}")
 
 @gestion_bp.route("/<int:id>/get", methods=["GET"])
 def obtener_gestion(id):
@@ -113,3 +119,29 @@ def eliminar_gestion(id):
     except Exception as e:
         db.session.rollback()
         raise InternalServerException(f"Error inesperado al eliminar la gestion: {str(e)}")
+
+#aplicando en curso gestion para saber los cursos de una determinada gestion
+
+@gestion_bp.route('/<int:id>/get-cursos',methods=["GET"])
+def get_cursos_por_gestion(id):
+    try:
+        
+        gestion = Gestion.query.get(id)
+        if not gestion:
+            raise NotFoundException("Error..gestion no encontrada..")
+        cursos = db.session.query(CursoGestion).join(Curso).join(Gestion).filter(
+            CursoGestion.gestion_id == id,
+            CursoGestion.estado == EstadoGeneral.HABILITADO.get_caracter()
+        ).all()
+        #return PaginatedResponseT.paginate(cursos,CursoGestionSchema)
+        return CursoGestionSchema(many=True).dump(cursos)
+
+    except GenericError:
+        db.session.rollback()
+        raise 
+    except Exception as e:
+        db.session.rollback()
+        raise InternalServerException(f"ocurrio un error inesperado..{str(e)}")
+
+
+

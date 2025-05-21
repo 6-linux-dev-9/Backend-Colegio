@@ -6,3 +6,6 @@ class GestionRequestBody(Schema):
 class GestionUpdateBody(Schema):
     nombre = fields.Str(required=True)
     estado = fields.Str(required=True)
+
+class GestionGetCursosBody(Schema):
+    gestion_id = fields.Int(required=True)
