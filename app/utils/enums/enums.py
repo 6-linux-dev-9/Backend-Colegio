@@ -35,7 +35,7 @@ class BaseEnum(Enum):
 class EstadoGeneral(BaseEnum):
     HABILITADO = ('AC','Habilitado') #luego sera H
     DESHABILITADO = ('D','Deshabilitado')# luego sera D
-
+    ELIMINADO = ('E','Eliminado')
 
 class EstadoUsuario(BaseEnum):
     ACTIVO = ('AC','Activo')

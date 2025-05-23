@@ -1,5 +1,7 @@
 from datetime import datetime
 from datetime import timezone
+from decimal import Decimal
+
 
 
 
@@ -9,8 +11,9 @@ from datetime import timezone
 #muy importante importar correctamente la base de datos definida en database
 
 from app.database import db
-from sqlalchemy import Boolean, ForeignKey, Integer, String, DateTime
+from sqlalchemy import Boolean, ForeignKey, Integer, Numeric, String, DateTime,Text, Time
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 
 from app.utils.enums.enums import Sesion
 
@@ -121,7 +124,7 @@ class Alumno(db.Model,TimestampMixin):
     def __repr__(self):
         return f"<Alumno> id: {self.id}"
 
-class Docente(db.Model,TimestampMixin):
+class Docente(db.Model,TimestampMixin,SoftDeleteMixin):
     __tablename__ = 'docentes'
     id:Mapped[int] = mapped_column(Integer,ForeignKey("usuarios.id", ondelete="CASCADE"),primary_key=True)
     usuario: Mapped["Usuario"] = relationship("Usuario",back_populates="docente")
@@ -129,7 +132,7 @@ class Docente(db.Model,TimestampMixin):
     def __repr__(self):
         return f"<Docente> id: {self.id}"
 
-class Materia(db.Model,TimestampMixin):
+class Materia(db.Model,TimestampMixin,SoftDeleteMixin):
     __tablename__ = "materias"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     nombre:Mapped[str] = mapped_column(String(70),nullable=False)
@@ -138,7 +141,7 @@ class Materia(db.Model,TimestampMixin):
     def __repr__(self):
         return f"<Materia> id: {self.id}, nombre: {self.nombre}"
 
-class Gestion(db.Model,TimestampMixin):
+class Gestion(db.Model,TimestampMixin,SoftDeleteMixin):
     __tablename__ = "gestiones"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     nombre:Mapped[str] = mapped_column(String(40),nullable=False)
@@ -150,7 +153,7 @@ class Gestion(db.Model,TimestampMixin):
     def __repr__(self):
         return f"<Gestion> id: {self.id}, nombre: {self.nombre}"
 
-class Curso(db.Model,TimestampMixin):
+class Curso(db.Model,TimestampMixin,SoftDeleteMixin):
     __tablename__ = "cursos"
     id:Mapped[int] = mapped_column(Integer,primary_key=True)
     nombre:Mapped[str] = mapped_column(String(40),nullable=False)
@@ -161,7 +164,7 @@ class Curso(db.Model,TimestampMixin):
     def __repr__(self):
         return f"<Curso> id: {self.id}, nombre: {self.nombre}"
 
-class CursoGestion(db.Model,TimestampMixin):
+class CursoGestion(db.Model,TimestampMixin,SoftDeleteMixin):
     __tablename__ = "curso_gestion"
     id:Mapped[int] = mapped_column(Integer,primary_key=True)
     total_aprobados:Mapped[int] = mapped_column(Integer,nullable=True)
@@ -183,17 +186,17 @@ class CursoGestion(db.Model,TimestampMixin):
     def __repr__(self):
         return f"<CursoGestion> id: {self.id}"
 
-class CursoGestionMateria(db.Model,TimestampMixin):
+class CursoGestionMateria(db.Model,TimestampMixin,SoftDeleteMixin):
     __tablename__ = "curso_gestion_materia"
     id:Mapped[int] = mapped_column(Integer,primary_key=True)
-    horario:Mapped[str] = mapped_column(String,nullable=False)
+    #horario:Mapped[str] = mapped_column(String,nullable=False)
     cantidad_aprobados:Mapped[int] = mapped_column(Integer,nullable=True)
     cantidad_reprobados:Mapped[int] = mapped_column(Integer,nullable=True)
     cantidad_abandono:Mapped[int] = mapped_column(Integer,nullable=True)
     url_image : Mapped[str] = mapped_column(String,nullable=True)
     estado: Mapped[str] = mapped_column(String(3),nullable=False,default="AC")#inicialmente activo
     #para docente
-    docente_id: Mapped[int] = mapped_column(Integer,ForeignKey("docentes.id"))
+    docente_id: Mapped[int] = mapped_column(Integer,ForeignKey("docentes.id"),nullable=True)
     docente: Mapped["Docente"] = relationship("Docente",back_populates='materias')
 
     #para materias
@@ -204,17 +207,56 @@ class CursoGestionMateria(db.Model,TimestampMixin):
     curso_gestion_id:Mapped[int] = mapped_column(Integer,ForeignKey("curso_gestion.id"))
     curso_gestion: Mapped["CursoGestion"] = relationship("CursoGestion",back_populates='curso_gestion_materias')
 
+    #para horario
+    horarios: Mapped[list["Horario"]] = relationship("Horario",back_populates='curso_gestion_materia_obj')
+    
     def __repr__(self):
         return f"<CursoGestionMateria> id: {self.id}"
 
-class Periodo(db.Model, TimestampMixin):
+class Horario(db.Model,TimestampMixin,SoftDeleteMixin):
+    __tablename__ = "horarios"
+    id:Mapped[int] = mapped_column(Integer,primary_key=True)
+    dia_id: Mapped[int] = mapped_column(Integer,ForeignKey("dias.id"),nullable=False)
+    hora_inicio: Mapped[datetime.time] = mapped_column(Time,nullable=False)
+    hora_fin: Mapped[datetime.time] = mapped_column(Time,nullable=False)
+    dia:Mapped["Dia"] = relationship("Dia",back_populates="horarios")
+    estado: Mapped[str] = mapped_column(String(3),nullable=False,default="AC")#inicialmente activo
+    curso_gestion_materia_id:Mapped[int] = mapped_column(Integer,ForeignKey("curso_gestion_materia.id"),nullable=False)
+    curso_gestion_materia_obj:Mapped["CursoGestionMateria"] = relationship('CursoGestionMateria',back_populates="horarios")
+
+
+class Dia(db.Model,TimestampMixin):
+    __tablename__ = "dias"
+    id:Mapped[int] = mapped_column(Integer,primary_key=True)
+    nombre: Mapped[str] = mapped_column(String(20),nullable=False)
+    horarios: Mapped[list["Horario"]] = relationship("Horario",back_populates="dia")
+    def __repr__(self):
+        return f"<Dia> id: {self.id}, nombre: {self.nombre}"
+
+class Periodo(db.Model, TimestampMixin,SoftDeleteMixin):
     __tablename__ = "periodos"
     id:Mapped[int] = mapped_column(Integer,primary_key=True)
     nombre:Mapped[str] = mapped_column(String(40),nullable=False)
     grado:Mapped[int] = mapped_column(Integer,nullable=False)
     estado: Mapped[str] = mapped_column(String(3),nullable=False,default="AC")#inicialmente activo
     gestion_id:Mapped[int] = mapped_column(Integer,ForeignKey("gestiones.id"),nullable=False)
-    gestion:Mapped["Gestion"] = relationship("Gestion",back_populates="periodos")
+    gestion: Mapped["Gestion"] = relationship('Gestion',back_populates="periodos")
     def __repr__(self):
         return f"<Periodo> id: {self.id}"
-
+    
+class Colegio(db.Model,TimestampMixin):
+    id:Mapped[int] = mapped_column(Integer,primary_key=True)
+    nombre:Mapped[str] = mapped_column(String(60),nullable=True)
+    total_alumnos:Mapped[int] = mapped_column(Integer,nullable=True,default=0)
+    gestion: Mapped[str] = mapped_column(String(40),nullable=True)
+    fecha_inscripcion: Mapped[datetime] = mapped_column(DateTime,nullable=True)
+    direccion: Mapped[str] = mapped_column(String,nullable=True)
+    origen_x: Mapped[Decimal] = mapped_column(Numeric(9,6),nullable=True)
+    origen_y: Mapped[Decimal] = mapped_column(Numeric(9,6),nullable=True)
+    destino_x: Mapped[Decimal] = mapped_column(Numeric(9,6),nullable=True)
+    destino_y: Mapped[Decimal] = mapped_column(Numeric(9,6),nullable=True)
+    url_icon: Mapped[str] = mapped_column(String,nullable=True)
+    descripcion: Mapped[str] = mapped_column(Text,nullable=True)
+    director_id: Mapped[int] = mapped_column(Integer,nullable=True)
+    def __repr__(self):
+        return f"<Colegio> id: {self.id}, nombre: {self.nombre}"

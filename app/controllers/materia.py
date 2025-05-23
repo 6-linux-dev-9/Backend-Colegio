@@ -8,7 +8,7 @@ from app.errors.errors import  GenericError, InternalServerException, NotFoundEx
 from app.models import Materia
 from app.schemas.materias_schema import MateriaRequestSchema, MateriaUpdateSchema
 from app.schemas.pagination_shema import PaginatedResponseT
-from app.schemas.schemas import MateriaSchema
+from app.schemas.schemas import MateriaSchema, MateriaSimpleSchema
 from app.utils.enums.enums import EstadoGeneral
 
 
@@ -52,14 +52,19 @@ def registrar_materia():
 @materia_bp.route('/list-paginate',methods = ["GET"])
 def list_paginate_materias():
     try:
-        return PaginatedResponseT.paginate(Materia.query,MateriaSchema)        
+        return PaginatedResponseT.paginate(Materia.query.filter_by(is_deleted=False),MateriaSchema)        
 
     except Exception as e:
         db.session.rollback()
         raise InternalServerException(f"Error ocurrio un error inesperado..{str(e)}")
 
-
-
+#para el filtrador de la materia
+@materia_bp.route('/list',methods=["GET"])
+def list_all_materias():
+    try:
+        return MateriaSimpleSchema(many=True).dump(Materia.query.filter_by(is_deleted=False,estado=EstadoGeneral.HABILITADO.get_caracter()).all())
+    except Exception as e:
+        raise InternalServerException(f"Error..ocurrio un error inesperado..{str(e)}")
 
 @materia_bp.route('/<int:id>/get', methods=["GET"])
 def get_materia(id):
@@ -125,9 +130,8 @@ def delete_materia(id):
             raise NotFoundException("Materia no encontrada")
                 
         #para desabilitar
-        materia.estado = EstadoGeneral.DESHABILITADO._value_[0]
-
-        # materia.soft_delete()
+        materia.estado = EstadoGeneral.ELIMINADO.get_caracter()
+        materia.soft_delete()
         db.session.commit()
         return jsonify({
             "message": "materia eliminado con éxito"
@@ -139,3 +143,5 @@ def delete_materia(id):
     except Exception as e:
         db.session.rollback()
         raise InternalServerException(f"Error inesperado al eliminar el materia: {str(e)}")
+
+

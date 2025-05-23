@@ -9,6 +9,7 @@ from app.controllers.docente import docente_bp
 from app.controllers.gestion import gestion_bp
 from app.controllers.curso import curso_bp
 from app.controllers.materia import materia_bp
+from app.controllers.curso_gestion import curso_gestion_bp
 api_bp = Blueprint('api', __name__)
 
 # Registrar Blueprints con prefijos
@@ -23,3 +24,4 @@ api_bp.register_blueprint(docente_bp,url_prefix='/docentes')
 api_bp.register_blueprint(gestion_bp,url_prefix='/gestiones')
 api_bp.register_blueprint(curso_bp,url_prefix='/cursos')
 api_bp.register_blueprint(materia_bp,url_prefix='/materias')
+api_bp.register_blueprint(curso_gestion_bp,url_prefix='/curso-gestion')
